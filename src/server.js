@@ -1,11 +1,25 @@
 import express from 'express'
-import Sessions from './bot.js'
+import http from 'http'
+import cors from 'cors'
+import { Server } from 'socket.io';
+import Sockets from './io.js'
 
-const server = express()
+import { router } from './routes/routes.js'
 
-server.get('/', async (req, res) => {
-    const session = await Sessions.create('1')
-    return res.status(200).send(session.session)
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
+
+app.use(cors());
+app.use(express.json());
+
+io.on('connection', (socket) => Sockets(socket));
+
+app.use((req, res, next) => {
+    req.io = io
+    next()
 })
 
-server.listen(3000);
+app.use(router)
+
+server.listen(5050);
